@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Defines function that creates a vanilla autoencoder
+Defines a function that creates a vanilla autoencoder
 """
 
 
@@ -10,56 +10,53 @@ import tensorflow.keras as keras
 def autoencoder(input_dims, hidden_layers, latent_dims):
     """
     Creates a vanilla autoencoder
+
+    Args:
+        input_dims: integer containing dimensions of model input
+        hidden_layers: list containing number of nodes for each hidden layer
+        latent_dims: integer containing dimensions of latent space
+
+    Returns:
+        encoder, decoder, auto
     """
-    if type(input_dims) is not int:
+    if not isinstance(input_dims, int):
         raise TypeError(
             "input_dims must be an int containing dimensions of model input")
-    if type(hidden_layers) is not list:
-        raise TypeError("hidden_layers must be a list of ints \
-            representing number of nodes for each layer")
+    if not isinstance(hidden_layers, list):
+        raise TypeError("hidden_layers must be a list of ints "
+                        "representing number of nodes for each layer")
     for nodes in hidden_layers:
-        if type(nodes) is not int:
-            raise TypeError("hidden_layers must be a list of ints \
-                representing number of nodes for each layer")
-    if type(latent_dims) is not int:
-        raise TypeError("latent_dims must be an int containing dimensions \
-            of latent space representation")
+        if not isinstance(nodes, int):
+            raise TypeError("hidden_layers must be a list of ints "
+                            "representing number of nodes for each layer")
+    if not isinstance(latent_dims, int):
+        raise TypeError("latent_dims must be an int containing dimensions "
+                        "of latent space representation")
 
     # Encoder
-    encoder_inputs = keras.Input(shape=(input_dims,))
-    encoder_value = encoder_inputs
+    inputs = keras.Input(shape=(input_dims,))
+    encoded = inputs
 
-    for i in range(len(hidden_layers)):
-        encoder_layer = keras.layers.Dense(hidden_layers[i],
-                                           activation='relu')
-        encoder_value = encoder_layer(encoder_value)
+    for nodes in hidden_layers:
+        encoded = keras.layers.Dense(nodes, activation='relu')(encoded)
 
-    latent_layer = keras.layers.Dense(latent_dims, activation='relu')
-    latent_outputs = latent_layer(encoder_value)
-
-    encoder = keras.Model(inputs=encoder_inputs, outputs=latent_outputs)
+    latent = keras.layers.Dense(latent_dims, activation='relu')(encoded)
+    encoder = keras.Model(inputs=inputs, outputs=latent)
 
     # Decoder
-    decoder_inputs = keras.Input(shape=(latent_dims,))
-    decoder_value = decoder_inputs
+    latent_inputs = keras.Input(shape=(latent_dims,))
+    decoded = latent_inputs
 
-    for i in range(len(hidden_layers) - 1, -1, -1):
-        decoder_layer = keras.layers.Dense(units=hidden_layers[i],
-                                           activation='relu')
-        decoder_value = decoder_layer(decoder_value)
+    for nodes in reversed(hidden_layers):
+        decoded = keras.layers.Dense(nodes, activation='relu')(decoded)
 
-    decoder_output_layer = keras.layers.Dense(units=input_dims,
-                                              activation='sigmoid')
-    decoder_outputs = decoder_output_layer(decoder_value)
+    outputs = keras.layers.Dense(input_dims, activation='sigmoid')(decoded)
+    decoder = keras.Model(inputs=latent_inputs, outputs=outputs)
 
-    decoder = keras.Model(inputs=decoder_inputs, outputs=decoder_outputs)
+    # Full Autoencoder
+    auto_outputs = decoder(encoder(inputs))
+    auto = keras.Model(inputs=inputs, outputs=auto_outputs)
 
-    # Autoencoder
-    auto_inputs = encoder_inputs
-    encoded_representation = encoder(auto_inputs)
-    reconstructed_outputs = decoder(encoded_representation)
-
-    auto = keras.Model(inputs=auto_inputs, outputs=reconstructed_outputs)
     auto.compile(optimizer='adam', loss='mean_squared_error')
 
     return encoder, decoder, auto
