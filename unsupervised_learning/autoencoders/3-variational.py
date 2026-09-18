@@ -16,14 +16,14 @@ def autoencoder(input_dims, hidden_layers, latent_dims):
             "input_dims must be an int containing dimensions of model input")
     if type(hidden_layers) is not list:
         raise TypeError("hidden_layers must be a list of ints \
-        representing number of nodes for each layer")
+            representing number of nodes for each layer")
     for nodes in hidden_layers:
         if type(nodes) is not int:
             raise TypeError("hidden_layers must be a list of ints \
-            representing number of nodes for each layer")
+                representing number of nodes for each layer")
     if type(latent_dims) is not int:
         raise TypeError("latent_dims must be an int containing dimensions \
-        of latent space representation")
+            of latent space representation")
 
     # Sampling layer for VAE
     def sampling(args):
@@ -90,8 +90,7 @@ def autoencoder(input_dims, hidden_layers, latent_dims):
         reconstruction_loss *= input_dims
         kl_loss = 1 + z_log_var_out - keras.backend.square(z_mean_out) - \
             keras.backend.exp(z_log_var_out)
-        kl_loss = keras.backend.sum(kl_loss, axis=-1)
-        kl_loss *= -0.5
+        kl_loss = -0.5 * keras.backend.sum(kl_loss, axis=-1)
         return keras.backend.mean(reconstruction_loss + kl_loss)
 
     auto.compile(optimizer='adam', loss=vae_loss)
